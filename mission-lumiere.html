@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Lumière : Le Laboratoire des Énergies</title>
+<style>
+/* ==================== RESET & BASE ==================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #e0e0e0;
+  overflow: hidden;
+  height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ==================== LAYOUT ==================== */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  background: linear-gradient(135deg, #e94560, #c23152);
+  color: #fff;
+  text-align: center;
+  padding: 8px 20px;
+  font-size: 1.3em;
+  font-weight: 800;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+header small {
+  display: block;
+  font-size: 0.5em;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+#main-area {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ==================== TOOLBOX (LEFT) ==================== */
+#toolbox {
+  width: 170px;
+  background: rgba(22, 33, 62, 0.95);
+  border-right: 2px solid rgba(233,69,96,0.3);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+#toolbox h3 {
+  font-size: 0.72em;
+  text-align: center;
+  color: #e94560;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.toolbox-section {
+  font-size: 0.62em;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  cursor: grab;
+  transition: all 0.15s;
+  position: relative;
+}
+.tool-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(233,69,96,0.2);
+  border-color: rgba(233,69,96,0.4);
+  background: rgba(255,255,255,0.08);
+}
+.tool-item:active { cursor: grabbing; }
+.tool-item .icon {
+  font-size: 1.5em;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.tool-item .info {
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #ddd;
+}
+.tool-item .info small {
+  font-weight: 400;
+  color: #999;
+  display: block;
+  font-size: 0.88em;
+}
+
+/* ==================== CANVAS AREA ==================== */
+#sim-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1e2a45 0%, #141c30 100%);
+  position: relative;
+  min-width: 0;
+}
+#sim-container canvas {
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.2);
+}
+
+/* ==================== SCENARIO PANEL (RIGHT) ==================== */
+#scenario-panel {
+  width: 210px;
+  background: rgba(22, 33, 62, 0.95);
+  border-left: 2px solid rgba(233,69,96,0.3);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+#scenario-panel h3 {
+  font-size: 0.72em;
+  text-align: center;
+  color: #e94560;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+.scenario-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #ccc;
+  font-size: 0.78em;
+  font-weight: 600;
+}
+.scenario-btn:hover { border-color: rgba(233,69,96,0.4); background: rgba(255,255,255,0.06); }
+.scenario-btn.active {
+  border-color: #e94560;
+  background: rgba(233,69,96,0.15);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(233,69,96,0.2);
+}
+.scenario-btn .badge {
+  font-size: 0.7em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-left: auto;
+}
+.badge-easy { background: #2ecc71; color: #fff; }
+.badge-medium { background: #f39c12; color: #fff; }
+.badge-hard { background: #e67e22; color: #fff; }
+.badge-boss { background: #e74c3c; color: #fff; }
+
+.scenario-btn .sc-icon { font-size: 1.3em; }
+.scenario-btn.completed { opacity: 0.6; }
+.scenario-btn.completed::after { content: " ✓"; color: #2ecc71; }
+
+/* ==================== BOTTOM BAR ==================== */
+#bottom-bar {
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+  border-top: 2px solid rgba(233,69,96,0.3);
+  height: 120px;
+  background: rgba(22, 33, 62, 0.95);
+}
+#message-panel {
+  flex: 1;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+}
+#message-panel h3 {
+  font-size: 0.72em;
+  color: #e94560;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+#message-log {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+#message-log .msg {
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  gap: 6px;
+}
+.msg-icon { flex-shrink: 0; }
+.msg-text { color: #bbb; }
+.msg-success { color: #2ecc71 !important; font-weight: 700; }
+.msg-error { color: #e74c3c !important; }
+.msg-hint { color: #f39c12 !important; font-style: italic; }
+
+#hint-panel {
+  width: 280px;
+  border-left: 2px solid rgba(233,69,96,0.15);
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#hint-panel h3 {
+  font-size: 0.72em;
+  color: #f39c12;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#hint-text {
+  font-size: 0.8em;
+  color: #cba;
+  line-height: 1.5;
+  flex: 1;
+}
+#hint-btn {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: transform 0.1s;
+}
+#hint-btn:hover { transform: translateY(-1px); }
+
+/* ==================== CONTROLS ==================== */
+#controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+#controls button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+#controls button:hover { transform: translateY(-1px); }
+#reset-btn { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+#clear-btn { background: linear-gradient(135deg, #95a5a6, #7f8c8d); color: #fff; }
+
+/* ==================== DRAG GHOST ==================== */
+.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1.1);
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.5));
+  font-size: 2.2em;
+  background: rgba(30,42,69,0.9);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid rgba(233,69,96,0.5);
+}
+
+/* ==================== CONFETTI ==================== */
+#confetti-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 2000;
+}
+
+/* ==================== SCROLLBAR ==================== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(233,69,96,0.3); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    ⚡ Mission Lumière : Le Laboratoire des Énergies
+    <small>Glissez les composants sur la table pour allumer l'ampoule — Niveau 1AC</small>
+  </header>
+
+  <div id="main-area">
+    <!-- LEFT: Toolbox -->
+    <div id="toolbox">
+      <h3>Boîte à Outils</h3>
+
+      <div class="toolbox-section">Sources d'énergie</div>
+      <div class="tool-item" data-type="sun" draggable="false">
+        <div class="icon">☀️</div>
+        <div class="info">Soleil<small>Énergie lumineuse</small></div>
+      </div>
+      <div class="tool-item" data-type="wind" draggable="false">
+        <div class="icon">💨</div>
+        <div class="info">Vent<small>Énergie éolienne</small></div>
+      </div>
+      <div class="tool-item" data-type="water" draggable="false">
+        <div class="icon">💧</div>
+        <div class="info">Chute d'eau<small>Énergie hydraulique</small></div>
+      </div>
+      <div class="tool-item" data-type="fire" draggable="false">
+        <div class="icon">🔥</div>
+        <div class="info">Bec Bunsen<small>Énergie thermique</small></div>
+      </div>
+
+      <div class="toolbox-section">Convertisseurs</div>
+      <div class="tool-item" data-type="solar_panel" draggable="false">
+        <div class="icon">⬛</div>
+        <div class="info">Panneau solaire<small>Lumière → Électricité</small></div>
+      </div>
+      <div class="tool-item" data-type="alternator" draggable="false">
+        <div class="icon">⚙️</div>
+        <div class="info">Alternateur<small>Mouvement → Électricité</small></div>
+      </div>
+      <div class="tool-item" data-type="battery" draggable="false">
+        <div class="icon">🔋</div>
+        <div class="info">Pile<small>Chimique → Électricité</small></div>
+      </div>
+
+      <div class="toolbox-section">Objets</div>
+      <div class="tool-item" data-type="boiler" draggable="false">
+        <div class="icon">🫖</div>
+        <div class="info">Réservoir d'eau<small>Produit de la vapeur</small></div>
+      </div>
+      <div class="tool-item" data-type="wire" draggable="false">
+        <div class="icon">🔌</div>
+        <div class="info">Fils électriques<small>Connexion</small></div>
+      </div>
+    </div>
+
+    <!-- CENTER: Simulation Canvas -->
+    <div id="sim-container">
+      <canvas id="sim" width="780" height="520"></canvas>
+      <div id="controls">
+        <button id="clear-btn">Vider la table</button>
+        <button id="reset-btn">Réinitialiser</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Scenarios -->
+    <div id="scenario-panel">
+      <h3>Scénarios</h3>
+      <div class="scenario-btn active" data-scenario="A">
+        <span class="sc-icon">🔋</span>
+        <span>A: Chimique</span>
+        <span class="badge badge-easy">Facile</span>
+      </div>
+      <div class="scenario-btn" data-scenario="B">
+        <span class="sc-icon">☀️</span>
+        <span>B: Solaire</span>
+        <span class="badge badge-medium">Moyen</span>
+      </div>
+      <div class="scenario-btn" data-scenario="C">
+        <span class="sc-icon">💨</span>
+        <span>C: Mécanique</span>
+        <span class="badge badge-hard">Avancé</span>
+      </div>
+      <div class="scenario-btn" data-scenario="D">
+        <span class="sc-icon">🔥</span>
+        <span>D: Thermique</span>
+        <span class="badge badge-boss">Boss</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+    <div id="message-panel">
+      <h3>Journal d'expérience</h3>
+      <div id="message-log"></div>
+    </div>
+    <div id="hint-panel">
+      <h3>💡 Indice</h3>
+      <div id="hint-text">Sélectionnez un scénario et commencez à placer des éléments sur la table.</div>
+      <button id="hint-btn">Demander un indice</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<script>
+/* ==================================================================
+   MISSION LUMIÈRE : LE LABORATOIRE DES ÉNERGIES
+   Simulation interactive 2.5D pour élèves de 1AC
+   ================================================================== */
+
+// ==================== CONSTANTS ====================
+const CANVAS_W = 780;
+const CANVAS_H = 520;
+
+// Table isometric dimensions
+const TABLE = { x: 390, y: 300, w: 700, h: 420 };
+
+// Bulb position (center of table)
+const BULB = { x: 390, y: 200, baseW: 40, baseH: 30, glassR: 28 };
+
+// Snap positions for placed objects
+const SNAP_POSITIONS = {
+  sun:         { x: 390, y: 55,  w: 80, h: 80 },
+  wind:        { x: 120, y: 220, w: 80, h: 80 },
+  water:       { x: 120, y: 220, w: 80, h: 80 },
+  fire:        { x: 220, y: 380, w: 60, h: 70 },
+  solar_panel: { x: 390, y: 160, w: 120, h: 70 },
+  alternator:  { x: 280, y: 270, w: 90, h: 90 },
+  battery:     { x: 260, y: 310, w: 70, h: 50 },
+  boiler:      { x: 300, y: 310, w: 70, h: 70 },
+  wire:        { x: 500, y: 280, w: 60, h: 30 },
+};
+
+// ==================== STATE ====================
+const state = {
+  scenario: 'A',
+  placedItems: [],    // [{type, x, y, ...}]
+  bulbOn: false,
+  bulbGlow: 0,        // 0..1
+  batteryLevel: 1,    // 0..1
+  alternatorSpin: 0,  // rotation angle
+  alternatorSpeed: 0, // rotation speed
+  steamParticles: [],
+  wireGlow: 0,
+  windParticles: [],
+  waterParticles: [],
+  sunRays: [],
+  fireParticles: [],
+  dragging: null,
+  mouseX: 0,
+  mouseY: 0,
+  time: 0,
+  messages: [],
+  scenarioComplete: { A: false, B: false, C: false, D: false },
+  hintLevel: 0,
+  errorShown: {},
+  successShown: false,
+  bulbFlicker: 0,
+  chainValid: false,
+  cloudX: -100,     // for scenario B cloud effect
+  cloudActive: false,
+};
+
+// ==================== DOM ====================
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+const msgLog = document.getElementById('message-log');
+const hintText = document.getElementById('hint-text');
+const confettiCanvas = document.getElementById('confetti-canvas');
+const confettiCtx = confettiCanvas.getContext('2d');
+
+// ==================== UTILITY ====================
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
+function dist(x1, y1, x2, y2) { return Math.sqrt((x1-x2)**2 + (y1-y2)**2); }
+
+function hasItem(type) {
+  return state.placedItems.some(it => it.type === type);
+}
+function getItem(type) {
+  return state.placedItems.find(it => it.type === type);
+}
+
+// ==================== MESSAGES ====================
+function addMsg(icon, text, cls) {
+  state.messages.push({ icon, text, cls: cls || '' });
+  const el = document.createElement('div');
+  el.className = 'msg';
+  el.innerHTML = `<span class="msg-icon">${icon}</span><span class="msg-text ${cls || ''}">${text}</span>`;
+  msgLog.appendChild(el);
+  msgLog.scrollTop = msgLog.scrollHeight;
+}
+
+// ==================== HINTS ====================
+const HINTS = {
+  A: [
+    "La pile contient de l'énergie chimique. Essayez de la placer sur la table.",
+    "N'oubliez pas les fils électriques pour relier la pile à l'ampoule !",
+    "Solution : Pile + Fils → Ampoule s'allume."
+  ],
+  B: [
+    "Le panneau solaire convertit la lumière en électricité. Placez-le d'abord.",
+    "Le panneau a besoin de lumière ! Cherchez une source de lumière dans la boîte à outils.",
+    "Placez le Soleil au-dessus du panneau, connectez les fils à l'ampoule."
+  ],
+  C: [
+    "L'alternateur a besoin de mouvement pour fonctionner. Cherchez quelque chose pour pousser l'hélice !",
+    "Le vent ou l'eau peuvent faire tourner l'hélice de l'alternateur.",
+    "Alternateur + Vent (ou Eau) + Fils → L'ampoule s'allume."
+  ],
+  D: [
+    "Le feu ne produit pas directement de l'électricité ! Il faut une chaîne de conversion.",
+    "Le feu chauffe l'eau → la vapeur pousse une turbine. Avez-vous placé le réservoir d'eau ?",
+    "Feu → Réservoir d'eau (vapeur) → Alternateur → Fils → Ampoule."
+  ]
+};
+
+function showHint() {
+  const sc = state.scenario;
+  const hints = HINTS[sc];
+  if (state.hintLevel < hints.length) {
+    hintText.textContent = hints[state.hintLevel];
+    addMsg('💡', hints[state.hintLevel], 'msg-hint');
+    state.hintLevel++;
+  } else {
+    hintText.textContent = "Vous avez utilisé tous les indices pour ce scénario !";
+  }
+}
+
+// ==================== CHECK CHAIN VALIDITY ====================
+function checkChain() {
+  const sc = state.scenario;
+  let valid = false;
+  let errorMsg = null;
+
+  if (sc === 'A') {
+    // Pile + Fils
+    if (hasItem('battery') && hasItem('wire')) {
+      valid = true;
+    }
+    // Wrong attempts
+    if (hasItem('sun') && !hasItem('battery') && !state.errorShown['A_sun']) {
+      state.errorShown['A_sun'] = true;
+      addMsg('❌', "Le soleil seul ne peut pas alimenter l'ampoule sans panneau solaire !", 'msg-error');
+    }
+    if (hasItem('battery') && !hasItem('wire') && !state.errorShown['A_nowire']) {
+      state.errorShown['A_nowire'] = true;
+      addMsg('⚠️', "La pile est posée mais il manque les fils pour fermer le circuit.", 'msg-hint');
+    }
+  }
+
+  if (sc === 'B') {
+    // Panneau solaire + Soleil + Fils
+    if (hasItem('solar_panel') && hasItem('sun') && hasItem('wire')) {
+      valid = true;
+    }
+    if (hasItem('solar_panel') && hasItem('wire') && !hasItem('sun') && !state.errorShown['B_nosun']) {
+      state.errorShown['B_nosun'] = true;
+      addMsg('⚠️', "Le panneau solaire est connecté mais il n'y a pas de lumière... Rien ne se passe.", 'msg-hint');
+    }
+    if (hasItem('solar_panel') && hasItem('sun') && !hasItem('wire') && !state.errorShown['B_nowire']) {
+      state.errorShown['B_nowire'] = true;
+      addMsg('⚠️', "Le panneau capte la lumière mais il n'est pas relié à l'ampoule.", 'msg-hint');
+    }
+    if (hasItem('sun') && !hasItem('solar_panel') && !state.errorShown['B_nopanel']) {
+      state.errorShown['B_nopanel'] = true;
+      addMsg('❌', "Le soleil brille, mais il faut un panneau solaire pour convertir la lumière en électricité !", 'msg-error');
+    }
+  }
+
+  if (sc === 'C') {
+    // Alternateur + (Vent ou Eau) + Fils
+    if (hasItem('alternator') && (hasItem('wind') || hasItem('water')) && hasItem('wire')) {
+      valid = true;
+    }
+    if ((hasItem('wind') || hasItem('water')) && !hasItem('alternator') && !state.errorShown['C_noalt']) {
+      state.errorShown['C_noalt'] = true;
+      addMsg('❌', "Le vent/l'eau souffle mais il n'y a rien à faire tourner ! Il faut un alternateur.", 'msg-error');
+    }
+    if (hasItem('alternator') && !hasItem('wind') && !hasItem('water') && !state.errorShown['C_nosource']) {
+      state.errorShown['C_nosource'] = true;
+      addMsg('⚠️', "L'alternateur est posé mais rien ne le fait tourner. Il faut du mouvement !", 'msg-hint');
+    }
+    if (hasItem('alternator') && (hasItem('wind') || hasItem('water')) && !hasItem('wire') && !state.errorShown['C_nowire']) {
+      state.errorShown['C_nowire'] = true;
+      addMsg('⚠️', "L'alternateur tourne ! Mais les fils manquent pour conduire l'électricité.", 'msg-hint');
+    }
+  }
+
+  if (sc === 'D') {
+    // Feu + Réservoir d'eau + Alternateur + Fils
+    if (hasItem('fire') && hasItem('boiler') && hasItem('alternator') && hasItem('wire')) {
+      valid = true;
+    }
+    // Common mistakes
+    if (hasItem('fire') && !hasItem('boiler') && hasItem('alternator') && !state.errorShown['D_noboiler']) {
+      state.errorShown['D_noboiler'] = true;
+      addMsg('❌', "Ça chauffe, mais ça ne crée pas d'électricité ! Le feu ne fait pas directement tourner l'alternateur.", 'msg-error');
+    }
+    if (hasItem('fire') && !hasItem('boiler') && !hasItem('alternator') && !state.errorShown['D_fireonly']) {
+      state.errorShown['D_fireonly'] = true;
+      addMsg('❌', "Le feu chauffe, mais ça ne produit pas d'électricité directement ! Pensez à la chaîne de conversion.", 'msg-error');
+    }
+    if (hasItem('fire') && hasItem('boiler') && !hasItem('alternator') && !state.errorShown['D_noalt']) {
+      state.errorShown['D_noalt'] = true;
+      addMsg('⚠️', "La vapeur sort du réservoir ! Mais il faut quelque chose pour convertir ce mouvement en électricité.", 'msg-hint');
+    }
+    if (hasItem('fire') && hasItem('boiler') && hasItem('alternator') && !hasItem('wire') && !state.errorShown['D_nowire']) {
+      state.errorShown['D_nowire'] = true;
+      addMsg('⚠️', "La chaîne de conversion fonctionne ! Mais il manque les fils pour alimenter l'ampoule.", 'msg-hint');
+    }
+  }
+
+  state.chainValid = valid;
+
+  // Success
+  if (valid && !state.successShown) {
+    state.successShown = true;
+    state.bulbOn = true;
+
+    const successMessages = {
+      A: "Bravo ! L'énergie chimique de la pile est convertie en électricité. L'ampoule brille !",
+      B: "Bravo ! Conversion directe de l'énergie solaire en électricité (Énergie Renouvelable ♻️).",
+      C: "Bravo ! L'énergie mécanique (mouvement) est convertie par l'alternateur en électricité !",
+      D: "Excellent ! Thermique → Mécanique → Électrique. C'est le principe des centrales thermiques !"
+    };
+    addMsg('🎉', successMessages[sc], 'msg-success');
+    state.scenarioComplete[sc] = true;
+
+    // Update scenario button
+    document.querySelectorAll('.scenario-btn').forEach(btn => {
+      if (btn.dataset.scenario === sc) btn.classList.add('completed');
+    });
+
+    launchConfetti();
+  }
+}
+
+// ==================== DRAWING FUNCTIONS ====================
+
+// --- Isometric table ---
+function drawTable(cx) {
+  // Shadow
+  cx.fillStyle = 'rgba(0,0,0,0.3)';
+  cx.beginPath();
+  cx.ellipse(TABLE.x, TABLE.y + 170, 340, 40, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  // Table legs
+  const legColor = '#5a4a3a';
+  const legW = 12;
+  const legs = [
+    { x: TABLE.x - 260, y: TABLE.y + 30 },
+    { x: TABLE.x + 260, y: TABLE.y + 30 },
+    { x: TABLE.x - 200, y: TABLE.y + 80 },
+    { x: TABLE.x + 200, y: TABLE.y + 80 },
+  ];
+  legs.forEach(leg => {
+    cx.fillStyle = legColor;
+    cx.fillRect(leg.x - legW/2, leg.y, legW, 130);
+    // Leg shadow
+    cx.fillStyle = '#4a3a2a';
+    cx.fillRect(leg.x - legW/2, leg.y, 4, 130);
+  });
+
+  // Table top (parallelogram for isometric effect)
+  const topY = TABLE.y - 10;
+  cx.fillStyle = '#8B7355';
+  cx.beginPath();
+  cx.moveTo(TABLE.x - 320, topY + 50);
+  cx.lineTo(TABLE.x - 200, topY - 30);
+  cx.lineTo(TABLE.x + 320, topY - 30);
+  cx.lineTo(TABLE.x + 200, topY + 50);
+  cx.closePath();
+  cx.fill();
+
+  // Table surface (lighter)
+  cx.fillStyle = '#A0896C';
+  cx.beginPath();
+  cx.moveTo(TABLE.x - 320, topY + 50);
+  cx.lineTo(TABLE.x - 200, topY - 30);
+  cx.lineTo(TABLE.x + 320, topY - 30);
+  cx.lineTo(TABLE.x + 200, topY + 50);
+  cx.closePath();
+  cx.fill();
+
+  // Surface texture lines
+  cx.strokeStyle = 'rgba(255,255,255,0.06)';
+  cx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const yy = topY - 25 + i * 10;
+    cx.beginPath();
+    cx.moveTo(TABLE.x - 300 + i * 10, yy + 45);
+    cx.lineTo(TABLE.x + 300 - i * 10, yy + 45);
+    cx.stroke();
+  }
+
+  // Front edge
+  cx.fillStyle = '#7A6B55';
+  cx.beginPath();
+  cx.moveTo(TABLE.x - 320, topY + 50);
+  cx.lineTo(TABLE.x + 200, topY + 50);
+  cx.lineTo(TABLE.x + 200, topY + 62);
+  cx.lineTo(TABLE.x - 320, topY + 62);
+  cx.closePath();
+  cx.fill();
+}
+
+// --- Bulb (always visible at center) ---
+function drawBulb(cx) {
+  const bx = BULB.x;
+  const by = BULB.y;
+  const glow = state.bulbGlow;
+
+  // Glow effect when on
+  if (glow > 0.05) {
+    const grad = cx.createRadialGradient(bx, by - 20, 5, bx, by - 20, 100 * glow);
+    grad.addColorStop(0, `rgba(255,255,100,${0.4 * glow})`);
+    grad.addColorStop(0.4, `rgba(255,230,50,${0.15 * glow})`);
+    grad.addColorStop(1, 'rgba(255,200,0,0)');
+    cx.fillStyle = grad;
+    cx.beginPath();
+    cx.ellipse(bx, by - 20, 120 * glow, 120 * glow, 0, 0, Math.PI * 2);
+    cx.fill();
+  }
+
+  // Socket base
+  cx.fillStyle = '#555';
+  cx.fillRect(bx - 15, by + 10, 30, 25);
+  cx.fillStyle = '#666';
+  for (let i = 0; i < 4; i++) {
+    cx.fillRect(bx - 15, by + 12 + i * 6, 30, 3);
+  }
+
+  // Screw base
+  cx.fillStyle = '#777';
+  cx.beginPath();
+  cx.ellipse(bx, by + 35, 20, 6, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  // Glass bulb
+  cx.save();
+  if (glow > 0.05) {
+    cx.shadowColor = `rgba(255,255,100,${glow})`;
+    cx.shadowBlur = 30 * glow;
+  }
+
+  const bulbGrad = cx.createRadialGradient(bx - 5, by - 25, 3, bx, by - 15, BULB.glassR);
+  if (glow > 0.1) {
+    bulbGrad.addColorStop(0, `rgba(255,255,220,${0.95})`);
+    bulbGrad.addColorStop(0.5, `rgba(255,245,150,${0.7 * glow + 0.2})`);
+    bulbGrad.addColorStop(1, `rgba(255,220,80,${0.3 * glow + 0.1})`);
+  } else {
+    bulbGrad.addColorStop(0, 'rgba(220,220,230,0.6)');
+    bulbGrad.addColorStop(0.5, 'rgba(200,200,210,0.4)');
+    bulbGrad.addColorStop(1, 'rgba(180,180,190,0.3)');
+  }
+
+  cx.fillStyle = bulbGrad;
+  cx.beginPath();
+  cx.ellipse(bx, by - 15, BULB.glassR, BULB.glassR + 5, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  cx.strokeStyle = glow > 0.1 ? 'rgba(255,240,100,0.5)' : 'rgba(180,180,200,0.4)';
+  cx.lineWidth = 1.5;
+  cx.stroke();
+  cx.restore();
+
+  // Filament
+  cx.strokeStyle = glow > 0.1 ? `rgba(255,200,50,${0.5 + glow * 0.5})` : 'rgba(120,120,130,0.5)';
+  cx.lineWidth = glow > 0.1 ? 2 : 1.2;
+  cx.beginPath();
+  cx.moveTo(bx - 6, by + 8);
+  for (let i = 0; i < 6; i++) {
+    cx.lineTo(bx - 6 + i * 2.4, by - 10 - (i % 2) * 12);
+  }
+  cx.lineTo(bx + 6, by + 8);
+  cx.stroke();
+
+  // Highlight
+  cx.fillStyle = 'rgba(255,255,255,0.2)';
+  cx.beginPath();
+  cx.ellipse(bx - 10, by - 25, 8, 12, -0.3, 0, Math.PI * 2);
+  cx.fill();
+
+  // Label
+  cx.fillStyle = glow > 0.1 ? '#fff' : '#888';
+  cx.font = 'bold 11px Arial';
+  cx.textAlign = 'center';
+  cx.textBaseline = 'top';
+  cx.fillText('💡 Ampoule', bx, by + 44);
+}
+
+// --- Battery ---
+function drawBattery(cx, item) {
+  const x = item.x, y = item.y;
+  const level = state.batteryLevel;
+
+  // Body
+  cx.fillStyle = '#2c3e50';
+  drawRoundRect(cx, x - 28, y - 20, 56, 40, 6);
+  cx.fill();
+  cx.strokeStyle = '#34495e';
+  cx.lineWidth = 2;
+  cx.stroke();
+
+  // Charge level
+  const chargeW = 48 * level;
+  cx.fillStyle = level > 0.3 ? '#2ecc71' : '#e74c3c';
+  cx.fillRect(x - 24, y - 8, chargeW, 16);
+
+  // Terminal +
+  cx.fillStyle = '#e74c3c';
+  cx.fillRect(x + 28, y - 6, 8, 12);
+  cx.fillStyle = '#fff';
+  cx.font = 'bold 10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('+', x + 32, y + 3);
+
+  // Terminal -
+  cx.fillStyle = '#3498db';
+  cx.fillRect(x - 36, y - 4, 8, 8);
+  cx.fillStyle = '#fff';
+  cx.fillText('−', x - 32, y + 3);
+
+  // Label
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('🔋 Pile', x, y + 28);
+}
+
+// --- Solar Panel ---
+function drawSolarPanel(cx, item) {
+  const x = item.x, y = item.y;
+
+  // Frame
+  cx.fillStyle = '#2c3e50';
+  cx.fillRect(x - 55, y - 30, 110, 60);
+
+  // Cells
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < 4; c++) {
+      cx.fillStyle = (r + c) % 2 === 0 ? '#1a237e' : '#283593';
+      cx.fillRect(x - 50 + c * 26, y - 25 + r * 26, 24, 24);
+      // Cell lines
+      cx.strokeStyle = 'rgba(255,255,255,0.1)';
+      cx.lineWidth = 0.5;
+      cx.beginPath();
+      cx.moveTo(x - 50 + c * 26 + 12, y - 25 + r * 26);
+      cx.lineTo(x - 50 + c * 26 + 12, y - 25 + r * 26 + 24);
+      cx.stroke();
+    }
+  }
+
+  // Shine when sun present
+  if (hasItem('sun') && state.chainValid) {
+    cx.fillStyle = 'rgba(255,255,100,0.15)';
+    cx.fillRect(x - 55, y - 30, 110, 60);
+  }
+
+  cx.strokeStyle = '#546e7a';
+  cx.lineWidth = 2;
+  cx.strokeRect(x - 55, y - 30, 110, 60);
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('⬛ Panneau Solaire', x, y + 40);
+}
+
+// --- Alternator ---
+function drawAlternator(cx, item) {
+  const x = item.x, y = item.y;
+  const spin = state.alternatorSpin;
+
+  // Body
+  cx.fillStyle = '#455a64';
+  cx.beginPath();
+  cx.ellipse(x, y, 38, 38, 0, 0, Math.PI * 2);
+  cx.fill();
+  cx.strokeStyle = '#607d8b';
+  cx.lineWidth = 3;
+  cx.stroke();
+
+  // Inner ring
+  cx.fillStyle = '#37474f';
+  cx.beginPath();
+  cx.ellipse(x, y, 28, 28, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  // Blades
+  cx.save();
+  cx.translate(x, y);
+  cx.rotate(spin);
+  for (let i = 0; i < 6; i++) {
+    cx.save();
+    cx.rotate(i * Math.PI / 3);
+    cx.fillStyle = '#78909c';
+    cx.beginPath();
+    cx.moveTo(0, -4);
+    cx.lineTo(24, -8);
+    cx.lineTo(26, 0);
+    cx.lineTo(24, 8);
+    cx.lineTo(0, 4);
+    cx.closePath();
+    cx.fill();
+    cx.strokeStyle = '#546e7a';
+    cx.lineWidth = 1;
+    cx.stroke();
+    cx.restore();
+  }
+
+  // Center hub
+  cx.fillStyle = '#b0bec5';
+  cx.beginPath();
+  cx.arc(0, 0, 6, 0, Math.PI * 2);
+  cx.fill();
+  cx.restore();
+
+  // Spinning indicator
+  if (state.alternatorSpeed > 0.5) {
+    cx.strokeStyle = 'rgba(46,204,113,0.6)';
+    cx.lineWidth = 2;
+    cx.setLineDash([4, 4]);
+    cx.beginPath();
+    cx.arc(x, y, 44, spin, spin + Math.PI * 1.2);
+    cx.stroke();
+    cx.setLineDash([]);
+  }
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('⚙️ Alternateur', x, y + 52);
+}
+
+// --- Fire / Bunsen ---
+function drawFire(cx, item) {
+  const x = item.x, y = item.y;
+  const t = state.time;
+
+  // Base
+  cx.fillStyle = '#555';
+  cx.beginPath();
+  cx.ellipse(x, y + 22, 22, 8, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  // Tube
+  const grad = cx.createLinearGradient(x - 8, 0, x + 8, 0);
+  grad.addColorStop(0, '#888');
+  grad.addColorStop(0.5, '#aaa');
+  grad.addColorStop(1, '#888');
+  cx.fillStyle = grad;
+  cx.fillRect(x - 8, y - 20, 16, 42);
+
+  // Flame
+  for (let i = 3; i >= 0; i--) {
+    const s = 1 - i * 0.2;
+    const fh = 35 * s;
+    const fw = 12 * s;
+    const ox = Math.sin(t * 11 + i * 2) * 2;
+    const oy = Math.cos(t * 8 + i) * 1.5;
+
+    cx.beginPath();
+    cx.moveTo(x + ox, y - 20);
+    cx.quadraticCurveTo(x + fw + ox, y - 20 - fh * 0.4 + oy, x + ox + Math.sin(t * 7 + i) * 2, y - 20 - fh + oy);
+    cx.quadraticCurveTo(x - fw + ox, y - 20 - fh * 0.4 + oy, x + ox, y - 20);
+    cx.closePath();
+
+    const colors = ['#e74c3c', '#f39c12', '#f1c40f', 'rgba(200,220,255,0.7)'];
+    cx.fillStyle = colors[i];
+    cx.globalAlpha = 0.7 + i * 0.08;
+    cx.fill();
+    cx.globalAlpha = 1;
+  }
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('🔥 Bec Bunsen', x, y + 38);
+}
+
+// --- Boiler ---
+function drawBoiler(cx, item) {
+  const x = item.x, y = item.y;
+
+  // Body
+  cx.fillStyle = '#78909c';
+  drawRoundRect(cx, x - 25, y - 25, 50, 50, 8);
+  cx.fill();
+  cx.strokeStyle = '#546e7a';
+  cx.lineWidth = 2;
+  cx.stroke();
+
+  // Water level window
+  cx.fillStyle = 'rgba(100,180,255,0.4)';
+  cx.fillRect(x - 18, y - 5, 36, 22);
+  cx.strokeStyle = '#455a64';
+  cx.lineWidth = 1;
+  cx.strokeRect(x - 18, y - 5, 36, 22);
+
+  // Spout
+  cx.fillStyle = '#607d8b';
+  cx.fillRect(x + 20, y - 22, 15, 8);
+
+  // Steam when heated
+  if (hasItem('fire') && hasItem('boiler')) {
+    for (let i = 0; i < 5; i++) {
+      const sx = x + 28 + Math.sin(state.time * 3 + i * 1.5) * 6;
+      const sy = y - 30 - i * 10 - (state.time * 30 % 20);
+      const alpha = 0.4 - i * 0.07;
+      cx.fillStyle = `rgba(200,200,220,${Math.max(0, alpha)})`;
+      cx.beginPath();
+      cx.ellipse(sx, sy, 6 + i * 2, 4 + i, 0, 0, Math.PI * 2);
+      cx.fill();
+    }
+  }
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('🫖 Réservoir', x, y + 35);
+}
+
+// --- Sun ---
+function drawSun(cx, item) {
+  const x = item.x, y = item.y;
+  const t = state.time;
+
+  // Glow
+  const grad = cx.createRadialGradient(x, y, 10, x, y, 55);
+  grad.addColorStop(0, 'rgba(255,255,100,0.5)');
+  grad.addColorStop(0.5, 'rgba(255,200,50,0.15)');
+  grad.addColorStop(1, 'rgba(255,200,0,0)');
+  cx.fillStyle = grad;
+  cx.beginPath();
+  cx.arc(x, y, 55, 0, Math.PI * 2);
+  cx.fill();
+
+  // Rays
+  cx.save();
+  cx.translate(x, y);
+  cx.rotate(t * 0.3);
+  for (let i = 0; i < 12; i++) {
+    cx.save();
+    cx.rotate(i * Math.PI / 6);
+    cx.strokeStyle = 'rgba(255,220,50,0.6)';
+    cx.lineWidth = 2;
+    cx.beginPath();
+    cx.moveTo(0, -26);
+    cx.lineTo(0, -38 - Math.sin(t * 4 + i) * 4);
+    cx.stroke();
+    cx.restore();
+  }
+  cx.restore();
+
+  // Core
+  cx.fillStyle = '#f1c40f';
+  cx.beginPath();
+  cx.arc(x, y, 22, 0, Math.PI * 2);
+  cx.fill();
+
+  cx.fillStyle = '#f39c12';
+  cx.beginPath();
+  cx.arc(x, y, 18, 0, Math.PI * 2);
+  cx.fill();
+
+  // Face
+  cx.fillStyle = '#e67e22';
+  cx.beginPath();
+  cx.arc(x - 6, y - 4, 2.5, 0, Math.PI * 2);
+  cx.fill();
+  cx.beginPath();
+  cx.arc(x + 6, y - 4, 2.5, 0, Math.PI * 2);
+  cx.fill();
+  cx.beginPath();
+  cx.arc(x, y + 4, 6, 0, Math.PI);
+  cx.stroke();
+
+  // Rays to panel
+  if (hasItem('solar_panel') && hasItem('sun')) {
+    const panel = getItem('solar_panel');
+    cx.strokeStyle = 'rgba(255,255,100,0.2)';
+    cx.lineWidth = 3;
+    cx.setLineDash([6, 8]);
+    for (let i = -1; i <= 1; i++) {
+      cx.beginPath();
+      cx.moveTo(x + i * 15, y + 25);
+      cx.lineTo(panel.x + i * 30, panel.y - 30);
+      cx.stroke();
+    }
+    cx.setLineDash([]);
+  }
+}
+
+// --- Wind ---
+function drawWind(cx, item) {
+  const x = item.x, y = item.y;
+  const t = state.time;
+
+  // Cloud shape
+  cx.fillStyle = 'rgba(180,200,220,0.8)';
+  cx.beginPath();
+  cx.arc(x, y - 5, 22, 0, Math.PI * 2);
+  cx.arc(x - 18, y + 5, 16, 0, Math.PI * 2);
+  cx.arc(x + 18, y + 5, 16, 0, Math.PI * 2);
+  cx.arc(x + 8, y - 12, 14, 0, Math.PI * 2);
+  cx.fill();
+
+  // Wind lines
+  if (hasItem('alternator')) {
+    const alt = getItem('alternator');
+    for (let i = 0; i < 4; i++) {
+      const ly = y + 8 + i * 8;
+      const progress = (t * 1.5 + i * 0.3) % 1;
+      const lx = lerp(x + 30, alt.x - 40, progress);
+      const alpha = progress < 0.8 ? 0.5 : (1 - progress) * 2.5;
+      cx.strokeStyle = `rgba(150,200,255,${alpha})`;
+      cx.lineWidth = 2;
+      cx.beginPath();
+      cx.moveTo(lx, ly + Math.sin(t * 5 + i) * 2);
+      cx.lineTo(lx + 30, ly + Math.sin(t * 5 + i + 1) * 2);
+      cx.stroke();
+      // Arrow
+      cx.beginPath();
+      cx.moveTo(lx + 30, ly);
+      cx.lineTo(lx + 25, ly - 3);
+      cx.lineTo(lx + 25, ly + 3);
+      cx.closePath();
+      cx.fillStyle = `rgba(150,200,255,${alpha})`;
+      cx.fill();
+    }
+  }
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('💨 Vent', x, y + 34);
+}
+
+// --- Water source ---
+function drawWater(cx, item) {
+  const x = item.x, y = item.y;
+  const t = state.time;
+
+  // Pipe/faucet
+  cx.fillStyle = '#78909c';
+  cx.fillRect(x - 8, y - 35, 16, 50);
+  cx.fillRect(x - 20, y - 35, 40, 10);
+
+  // Water stream
+  cx.strokeStyle = 'rgba(100,180,255,0.7)';
+  cx.lineWidth = 6;
+  cx.beginPath();
+  cx.moveTo(x, y + 15);
+  cx.quadraticCurveTo(x + Math.sin(t * 6) * 3, y + 30, x + 5, y + 45);
+  cx.stroke();
+
+  // Droplets
+  for (let i = 0; i < 3; i++) {
+    const dy = ((t * 80 + i * 25) % 60);
+    cx.fillStyle = `rgba(100,180,255,${0.6 - dy/100})`;
+    cx.beginPath();
+    cx.ellipse(x + Math.sin(t * 4 + i) * 3, y + 15 + dy, 3, 4, 0, 0, Math.PI * 2);
+    cx.fill();
+  }
+
+  // Direction arrows to alternator
+  if (hasItem('alternator')) {
+    const alt = getItem('alternator');
+    for (let i = 0; i < 3; i++) {
+      const progress = (t * 1.2 + i * 0.33) % 1;
+      const ax = lerp(x + 20, alt.x - 40, progress);
+      const ay = lerp(y + 30, alt.y, progress);
+      const alpha = Math.sin(progress * Math.PI) * 0.5;
+      cx.fillStyle = `rgba(100,180,255,${alpha})`;
+      cx.beginPath();
+      cx.ellipse(ax, ay, 5, 3, 0, 0, Math.PI * 2);
+      cx.fill();
+    }
+  }
+
+  cx.fillStyle = '#ccc';
+  cx.font = '10px Arial';
+  cx.textAlign = 'center';
+  cx.fillText('💧 Chute d\'eau', x, y + 58);
+}
+
+// --- Wires ---
+function drawWires(cx) {
+  if (!hasItem('wire')) return;
+
+  const wireItem = getItem('wire');
+  const glow = state.wireGlow;
+
+  // Determine connection points based on scenario
+  const sc = state.scenario;
+  let fromX, fromY, toX, toY;
+
+  if (sc === 'A' && hasItem('battery')) {
+    const bat = getItem('battery');
+    fromX = bat.x + 30; fromY = bat.y;
+    toX = BULB.x - 15; toY = BULB.y + 30;
+  } else if (sc === 'B' && hasItem('solar_panel')) {
+    const sp = getItem('solar_panel');
+    fromX = sp.x + 55; fromY = sp.y;
+    toX = BULB.x + 15; toY = BULB.y + 30;
+  } else if ((sc === 'C' || sc === 'D') && hasItem('alternator')) {
+    const alt = getItem('alternator');
+    fromX = alt.x + 40; fromY = alt.y;
+    toX = BULB.x - 15; toY = BULB.y + 30;
+  } else {
+    fromX = wireItem.x; fromY = wireItem.y;
+    toX = BULB.x; toY = BULB.y + 30;
+  }
+
+  // Red wire
+  cx.strokeStyle = glow > 0.1 ? `rgba(255,${Math.floor(100 + glow * 155)},50,0.9)` : 'rgba(200,60,60,0.7)';
+  cx.lineWidth = glow > 0.1 ? 4 : 3;
+  cx.lineCap = 'round';
+  if (glow > 0.1) {
+    cx.shadowColor = 'rgba(255,255,100,0.5)';
+    cx.shadowBlur = 8 * glow;
+  }
+  cx.beginPath();
+  cx.moveTo(fromX, fromY);
+  cx.quadraticCurveTo(fromX + 30, (fromY + toY) / 2 + 20, toX, toY);
+  cx.stroke();
+
+  // Black wire (return)
+  cx.strokeStyle = glow > 0.1 ? 'rgba(80,80,80,0.9)' : 'rgba(50,50,50,0.7)';
+  cx.lineWidth = 3;
+  cx.beginPath();
+  cx.moveTo(fromX - 10, fromY + 10);
+  cx.quadraticCurveTo(fromX + 50, (fromY + toY) / 2 + 40, toX + 10, toY + 5);
+  cx.stroke();
+
+  cx.shadowColor = 'transparent';
+  cx.shadowBlur = 0;
+
+  // Current flow dots
+  if (glow > 0.1) {
+    for (let i = 0; i < 5; i++) {
+      const t = ((state.time * 2 + i * 0.2) % 1);
+      const px = lerp(fromX, toX, t);
+      const py = lerp(fromY, toY, t) + Math.sin(t * Math.PI) * 20;
+      cx.fillStyle = `rgba(255,255,100,${0.7 * glow})`;
+      cx.beginPath();
+      cx.arc(px, py, 3, 0, Math.PI * 2);
+      cx.fill();
+    }
+  }
+
+  // Wire label
+  if (!state.chainValid) {
+    cx.fillStyle = '#ccc';
+    cx.font = '10px Arial';
+    cx.textAlign = 'center';
+    cx.fillText('🔌 Fils', wireItem.x, wireItem.y + 18);
+  }
+}
+
+// --- Helper ---
+function drawRoundRect(cx, x, y, w, h, r) {
+  cx.beginPath();
+  cx.moveTo(x + r, y);
+  cx.lineTo(x + w - r, y);
+  cx.quadraticCurveTo(x + w, y, x + w, y + r);
+  cx.lineTo(x + w, y + h - r);
+  cx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  cx.lineTo(x + r, y + h);
+  cx.quadraticCurveTo(x, y + h, x, y + h - r);
+  cx.lineTo(x, y + r);
+  cx.quadraticCurveTo(x, y, x + r, y);
+  cx.closePath();
+}
+
+// --- Energy chain diagram ---
+function drawEnergyChain(cx) {
+  const sc = state.scenario;
+  if (!state.chainValid) return;
+
+  const chains = {
+    A: ['Chimique', '→', 'Électrique', '→', 'Lumineuse'],
+    B: ['Solaire', '→', 'Électrique', '→', 'Lumineuse'],
+    C: ['Mécanique', '→', 'Électrique', '→', 'Lumineuse'],
+    D: ['Thermique', '→', 'Mécanique', '→', 'Électrique', '→', 'Lumineuse'],
+  };
+
+  const chain = chains[sc];
+  const startX = CANVAS_W / 2 - (chain.length * 28);
+  const y = CANVAS_H - 30;
+
+  cx.font = 'bold 11px Arial';
+  cx.textAlign = 'center';
+  cx.textBaseline = 'middle';
+
+  let xPos = startX;
+  chain.forEach((item, i) => {
+    if (item === '→') {
+      cx.fillStyle = '#e94560';
+      cx.fillText('→', xPos, y);
+      xPos += 28;
+    } else {
+      const colors = { 'Chimique': '#2ecc71', 'Solaire': '#f1c40f', 'Mécanique': '#3498db', 'Thermique': '#e74c3c', 'Électrique': '#9b59b6', 'Lumineuse': '#f39c12' };
+      cx.fillStyle = colors[item] || '#fff';
+
+      // Background pill
+      const tw = cx.measureText(item).width + 16;
+      cx.save();
+      cx.globalAlpha = 0.2;
+      drawRoundRect(cx, xPos - tw/2, y - 10, tw, 20, 8);
+      cx.fill();
+      cx.globalAlpha = 1;
+      cx.restore();
+
+      cx.fillText(item, xPos, y);
+      xPos += cx.measureText(item).width + 32;
+    }
+  });
+}
+
+// ==================== MAIN RENDER ====================
+function renderScene() {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+  bgGrad.addColorStop(0, '#1a2332');
+  bgGrad.addColorStop(1, '#0f1923');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx < CANVAS_W; gx += 40) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CANVAS_H); ctx.stroke();
+  }
+  for (let gy = 0; gy < CANVAS_H; gy += 40) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CANVAS_W, gy); ctx.stroke();
+  }
+
+  // Table
+  drawTable(ctx);
+
+  // Draw placed items (sorted by y for depth)
+  const sortedItems = [...state.placedItems].sort((a, b) => a.y - b.y);
+
+  // Draw wires first (behind everything)
+  drawWires(ctx);
+
+  sortedItems.forEach(item => {
+    switch (item.type) {
+      case 'battery': drawBattery(ctx, item); break;
+      case 'solar_panel': drawSolarPanel(ctx, item); break;
+      case 'alternator': drawAlternator(ctx, item); break;
+      case 'fire': drawFire(ctx, item); break;
+      case 'boiler': drawBoiler(ctx, item); break;
+      case 'sun': drawSun(ctx, item); break;
+      case 'wind': drawWind(ctx, item); break;
+      case 'water': drawWater(ctx, item); break;
+    }
+  });
+
+  // Bulb (always visible)
+  drawBulb(ctx);
+
+  // Energy chain
+  drawEnergyChain(ctx);
+
+  // Scenario label
+  const scLabels = {
+    A: 'Scénario A : Énergie Chimique (Pile)',
+    B: 'Scénario B : Énergie Solaire',
+    C: 'Scénario C : Énergie Mécanique (Vent/Eau)',
+    D: 'Scénario D : Énergie Thermique (Le Boss !)',
+  };
+  ctx.fillStyle = 'rgba(233,69,96,0.8)';
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(scLabels[state.scenario], 15, 12);
+
+  // Objective
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '11px Arial';
+  ctx.fillText('Objectif : Allumer l\'ampoule !', 15, 30);
+
+  // Drop zone when dragging
+  if (state.dragging) {
+    ctx.strokeStyle = 'rgba(233,69,96,0.3)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    drawRoundRect(ctx, 20, 15, CANVAS_W - 40, CANVAS_H - 50, 12);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(233,69,96,0.04)';
+    drawRoundRect(ctx, 20, 15, CANVAS_W - 40, CANVAS_H - 50, 12);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(233,69,96,0.3)';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Relâcher ici pour placer', CANVAS_W / 2, CANVAS_H / 2 + 100);
+  }
+}
+
+// ==================== GAME LOOP ====================
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+  state.time += dt;
+
+  // Animate bulb glow
+  const targetGlow = state.bulbOn ? 1 : 0;
+  state.bulbGlow = lerp(state.bulbGlow, targetGlow, dt * 4);
+
+  // Bulb flicker
+  if (state.bulbOn) {
+    state.bulbGlow += Math.sin(state.time * 20) * 0.02;
+  }
+
+  // Wire glow
+  const targetWireGlow = state.chainValid ? 1 : 0;
+  state.wireGlow = lerp(state.wireGlow, targetWireGlow, dt * 4);
+
+  // Battery drain
+  if (state.chainValid && state.scenario === 'A') {
+    state.batteryLevel = Math.max(0, state.batteryLevel - dt * 0.03);
+    if (state.batteryLevel <= 0 && state.bulbOn) {
+      state.bulbOn = false;
+      state.chainValid = false;
+      if (!state.errorShown['A_empty']) {
+        state.errorShown['A_empty'] = true;
+        addMsg('🔋', 'La pile est vide ! L\'énergie chimique est épuisable (non renouvelable).', 'msg-hint');
+      }
+    }
+  }
+
+  // Alternator spin
+  if (hasItem('alternator')) {
+    const shouldSpin = (
+      (state.scenario === 'C' && (hasItem('wind') || hasItem('water'))) ||
+      (state.scenario === 'D' && hasItem('fire') && hasItem('boiler'))
+    );
+    const targetSpeed = shouldSpin ? 5 : 0;
+    state.alternatorSpeed = lerp(state.alternatorSpeed, targetSpeed, dt * 3);
+    state.alternatorSpin += state.alternatorSpeed * dt;
+  }
+
+  renderScene();
+  requestAnimationFrame(gameLoop);
+}
+
+// ==================== DRAG & DROP ====================
+function getSnapPosition(type) {
+  const sc = state.scenario;
+  const pos = { ...SNAP_POSITIONS[type] };
+
+  // Adjust positions based on scenario context
+  if (sc === 'D') {
+    if (type === 'fire') { pos.x = 200; pos.y = 380; }
+    if (type === 'boiler') { pos.x = 200; pos.y = 290; }
+    if (type === 'alternator') { pos.x = 340; pos.y = 290; }
+    if (type === 'wire') { pos.x = 500; pos.y = 280; }
+  }
+  if (sc === 'C') {
+    if (type === 'wind') { pos.x = 130; pos.y = 260; }
+    if (type === 'water') { pos.x = 130; pos.y = 260; }
+    if (type === 'alternator') { pos.x = 290; pos.y = 270; }
+    if (type === 'wire') { pos.x = 500; pos.y = 280; }
+  }
+  if (sc === 'B') {
+    if (type === 'sun') { pos.x = 390; pos.y = 55; }
+    if (type === 'solar_panel') { pos.x = 390; pos.y = 160; }
+    if (type === 'wire') { pos.x = 530; pos.y = 240; }
+  }
+  if (sc === 'A') {
+    if (type === 'battery') { pos.x = 250; pos.y = 300; }
+    if (type === 'wire') { pos.x = 450; pos.y = 280; }
+  }
+
+  return pos;
+}
+
+function startDrag(type, e) {
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  const icons = {
+    sun: '☀️', wind: '💨', water: '💧', fire: '🔥',
+    solar_panel: '⬛', alternator: '⚙️', battery: '🔋',
+    boiler: '🫖', wire: '🔌'
+  };
+  ghost.textContent = icons[type] || '?';
+  document.body.appendChild(ghost);
+
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  ghost.style.left = clientX + 'px';
+  ghost.style.top = clientY + 'px';
+
+  state.dragging = { type, ghostEl: ghost };
+}
+
+function moveDrag(e) {
+  if (!state.dragging) return;
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  state.dragging.ghostEl.style.left = clientX + 'px';
+  state.dragging.ghostEl.style.top = clientY + 'px';
+  state.mouseX = clientX;
+  state.mouseY = clientY;
+}
+
+function endDrag(e) {
+  if (!state.dragging) return;
+  const ghost = state.dragging.ghostEl;
+  const type = state.dragging.type;
+
+  // Check if dropped on canvas
+  const rect = canvas.getBoundingClientRect();
+  if (state.mouseX >= rect.left && state.mouseX <= rect.right &&
+      state.mouseY >= rect.top && state.mouseY <= rect.bottom) {
+    placeItem(type);
+  }
+
+  ghost.remove();
+  state.dragging = null;
+}
+
+function placeItem(type) {
+  // Don't duplicate
+  if (hasItem(type)) {
+    addMsg('⚠️', `${type} est déjà sur la table !`, 'msg-hint');
+    return;
+  }
+
+  const pos = getSnapPosition(type);
+  state.placedItems.push({ type, x: pos.x, y: pos.y });
+
+  const names = {
+    sun: 'Soleil ☀️', wind: 'Vent 💨', water: 'Chute d\'eau 💧', fire: 'Bec Bunsen 🔥',
+    solar_panel: 'Panneau solaire ⬛', alternator: 'Alternateur ⚙️', battery: 'Pile 🔋',
+    boiler: 'Réservoir d\'eau 🫖', wire: 'Fils électriques 🔌'
+  };
+  addMsg('📦', `${names[type]} placé sur la table.`, '');
+
+  // Check chain after placement
+  setTimeout(() => checkChain(), 300);
+}
+
+// ==================== SCENARIO SWITCH ====================
+function switchScenario(sc) {
+  state.scenario = sc;
+  state.placedItems = [];
+  state.bulbOn = false;
+  state.bulbGlow = 0;
+  state.batteryLevel = 1;
+  state.alternatorSpin = 0;
+  state.alternatorSpeed = 0;
+  state.wireGlow = 0;
+  state.chainValid = false;
+  state.hintLevel = 0;
+  state.errorShown = {};
+  state.successShown = false;
+
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scenario === sc);
+    // Keep completed status
+    if (state.scenarioComplete[btn.dataset.scenario]) {
+      btn.classList.add('completed');
+    }
+  });
+
+  const objectives = {
+    A: "Utilisez l'énergie chimique d'une pile pour allumer l'ampoule.",
+    B: "Captez l'énergie solaire pour produire de l'électricité.",
+    C: "Utilisez le vent ou l'eau pour faire tourner un alternateur.",
+    D: "Le Boss : Construisez une chaîne complète Thermique → Mécanique → Électrique !"
+  };
+  hintText.textContent = objectives[sc];
+  addMsg('🎯', `Scénario ${sc} sélectionné : ${objectives[sc]}`, '');
+}
+
+// ==================== CONFETTI ====================
+let confettiParticles = [];
+let confettiActive = false;
+
+function launchConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+  confettiParticles = [];
+  confettiActive = true;
+
+  const colors = ['#e94560', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#f1c40f', '#e74c3c'];
+  for (let i = 0; i < 180; i++) {
+    confettiParticles.push({
+      x: Math.random() * confettiCanvas.width,
+      y: Math.random() * -confettiCanvas.height,
+      vx: (Math.random() - 0.5) * 250,
+      vy: Math.random() * 250 + 120,
+      w: Math.random() * 12 + 4,
+      h: Math.random() * 7 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 500,
+      life: 1,
+    });
+  }
+  animateConfetti();
+}
+
+function animateConfetti() {
+  if (!confettiActive) return;
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+  let alive = 0;
+  confettiParticles.forEach(p => {
+    p.x += p.vx * 0.016;
+    p.vy += 180 * 0.016;
+    p.y += p.vy * 0.016;
+    p.rotation += p.rotSpeed * 0.016;
+    p.life -= 0.003;
+
+    if (p.life > 0 && p.y < confettiCanvas.height + 50) {
+      alive++;
+      confettiCtx.save();
+      confettiCtx.globalAlpha = Math.min(1, p.life * 2);
+      confettiCtx.translate(p.x, p.y);
+      confettiCtx.rotate(p.rotation * Math.PI / 180);
+      confettiCtx.fillStyle = p.color;
+      confettiCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      confettiCtx.restore();
+    }
+  });
+
+  if (alive > 0) {
+    requestAnimationFrame(animateConfetti);
+  } else {
+    confettiActive = false;
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+}
+
+// ==================== EVENT LISTENERS ====================
+
+// Tool items drag
+document.querySelectorAll('.tool-item').forEach(btn => {
+  const type = btn.dataset.type;
+  btn.addEventListener('mousedown', e => { e.preventDefault(); startDrag(type, e); });
+  btn.addEventListener('touchstart', e => { e.preventDefault(); startDrag(type, e); }, { passive: false });
+});
+
+document.addEventListener('mousemove', moveDrag);
+document.addEventListener('touchmove', e => { e.preventDefault(); moveDrag(e); }, { passive: false });
+document.addEventListener('mouseup', endDrag);
+document.addEventListener('touchend', endDrag);
+
+// Scenario buttons
+document.querySelectorAll('.scenario-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchScenario(btn.dataset.scenario));
+});
+
+// Hint button
+document.getElementById('hint-btn').addEventListener('click', showHint);
+
+// Clear table
+document.getElementById('clear-btn').addEventListener('click', () => {
+  state.placedItems = [];
+  state.bulbOn = false;
+  state.chainValid = false;
+  state.wireGlow = 0;
+  state.alternatorSpeed = 0;
+  state.errorShown = {};
+  state.successShown = false;
+  addMsg('🧹', 'Table vidée. Recommencez votre montage.', '');
+});
+
+// Reset all
+document.getElementById('reset-btn').addEventListener('click', () => {
+  state.placedItems = [];
+  state.bulbOn = false;
+  state.bulbGlow = 0;
+  state.batteryLevel = 1;
+  state.alternatorSpin = 0;
+  state.alternatorSpeed = 0;
+  state.wireGlow = 0;
+  state.chainValid = false;
+  state.hintLevel = 0;
+  state.errorShown = {};
+  state.successShown = false;
+  state.messages = [];
+  msgLog.innerHTML = '';
+  addMsg('🔄', 'Simulation réinitialisée. Bon courage !', '');
+  hintText.textContent = 'Sélectionnez un scénario et commencez à placer des éléments.';
+});
+
+// ==================== INIT ====================
+function init() {
+  addMsg('🧑‍🔬', 'Bienvenue au Laboratoire des Énergies ! Votre mission : allumer l\'ampoule.', '');
+  addMsg('📋', 'Glissez les composants depuis la boîte à outils vers la table de travail.', '');
+  addMsg('🎯', 'Scénario A sélectionné : Utilisez l\'énergie chimique d\'une pile.', '');
+  requestAnimationFrame(gameLoop);
+}
+
+init();
+</script>
+</body>
+</html>
